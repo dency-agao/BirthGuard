@@ -1,378 +1,253 @@
-# BirthGuard - Maternal Health Monitoring System
+# BirthGuard Frontend
 
-A comprehensive full-stack application for monitoring maternal health during pregnancy, enabling pregnant mothers to track symptoms and risk, while Community Health Volunteers (CHVs) manage cases, create referrals, and coordinate care.
+A React.js web application for maternal health monitoring. Enables pregnant mothers to track symptoms and risk, while Community Health Volunteers (CHVs) manage cases and create referrals.
 
-## 📋 Overview
-
-BirthGuard addresses the challenge of maternal mortality in resource-limited settings by providing:
-- **Real-time symptom tracking** for pregnant mothers
-- **AI-powered risk scoring** based on symptoms and vital signs
-- **Automated alerts** to community health workers
-- **Facility referral management** for high-risk cases
-- **Dashboard analytics** for health coordinators
-
-## 🏗️ Architecture
-
-### Tech Stack
-
-**Frontend:**
-- React 19 with React Router v6
-- Axios HTTP client
-- React Hot Toast notifications
-- Lucide React icons
-- Recharts for data visualization
-- CSS3 with custom design system
-
-**Backend:**
-- Node.js + Express.js
-- PostgreSQL (via Supabase)
-- JWT authentication
-- bcryptjs password hashing
-- Row Level Security (RLS) policies
-
-**Database:**
-- Supabase (managed PostgreSQL)
-- Real-time subscriptions ready
-- Automatic backups and snapshots
-
-### Design System
-
-- **Theme**: Ocean Blue with glassmorphism effects
-- **Colors**: Primary blue (#0077B6), navy (#023E8A), sky (#00B4D8)
-- **Typography**: Playfair Display (headings), DM Sans (body), JetBrains Mono (data)
-- **Features**: Responsive design, accessible components, smooth animations
-
-## 📁 Project Structure
-
-```
-BirthGuard/
-├── guard/                          # React Frontend (Create React App)
-│   ├── src/
-│   │   ├── pages/                 # Page components
-│   │   ├── components/            # Reusable components
-│   │   ├── context/               # React Context (AuthContext)
-│   │   ├── services/              # API service with JWT
-│   │   ├── styles/                # Global design system
-│   │   ├── App.js                 # Main app with routes
-│   │   └── index.js               # Entry point
-│   ├── public/                    # Static assets
-│   ├── package.json               # Frontend dependencies
-│   └── README.md                  # Frontend documentation
-│
-├── backend/                        # Node.js Express API
-│   ├── src/
-│   │   ├── routes/                # API endpoints
-│   │   │   ├── auth.js            # Authentication
-│   │   │   ├── symptoms.js        # Symptom logging
-│   │   │   ├── risk.js            # Risk assessment
-│   │   │   ├── mother.js          # Mother profile
-│   │   │   ├── chv.js             # CHV dashboard
-│   │   │   └── referrals.js       # Referral management
-│   │   ├── middleware/            # Express middleware
-│   │   │   └── authMiddleware.js  # JWT & role verification
-│   │   ├── services/              # Business logic
-│   │   │   └── riskScoringService.js  # Risk algorithm
-│   │   └── app.js                 # Express server
-│   ├── database/
-│   │   └── schema.sql             # PostgreSQL schema with RLS
-│   ├── .env                       # Environment variables
-│   ├── package.json               # Backend dependencies
-│   └── README.md                  # Backend documentation
-│
-└── README.md                       # This file
-
-```
-
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 14+ and npm/yarn
-- Supabase account (free tier works)
-- Git
+- Existing Create React App installation
 
-### 1. Clone and Setup
+### Installation
 
-```bash
-# Navigate to project directory
-cd BirthGuard
+1. **Install dependencies** (if not already installed)
+   ```bash
+   cd guard
+   npm install
+   ```
 
-# Install frontend dependencies
-cd guard
-npm install
+2. **Set up environment variables**
+   
+   Create a `.env` file in the `/guard` directory:
+   ```
+   REACT_APP_API_BASE_URL=http://localhost:5000/api
+   ```
 
-# Install backend dependencies
-cd ../backend
-npm install
+3. **Start development server**
+   ```bash
+   npm start
+   ```
+
+   App will open at `http://localhost:3000`
+
+4. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 📚 File Structure
+
+```
+src/
+├── App.js                          # Main app component with routing
+├── App.css                         # App-level styles
+├── index.js                        # React entry point
+├── index.css                       # Global base styles
+├── styles/
+│   └── globals.css                # Design system & utility classes
+├── context/
+│   └── AuthContext.jsx            # Global authentication state
+├── services/
+│   └── api.js                     # Axios HTTP service with JWT interceptor
+├── components/
+│   ├── Navbar.jsx                 # Navigation header (all pages)
+│   ├── Navbar.css                 # Navbar styling
+│   ├── Footer.jsx                 # Footer (all pages)
+│   ├── Footer.css                 # Footer styling
+│   ├── ProtectedRoute.jsx         # Route guard for authenticated users
+│   └── ui/
+│       ├── RiskGauge.jsx          # Circular risk score display
+│       ├── RiskGauge.css
+│       ├── StatCard.jsx           # Dashboard stat card component
+│       ├── StatCard.css
+│       ├── AlertRow.jsx           # High-risk alert display
+│       └── AlertRow.css
+└── pages/
+    ├── Landing.jsx                # Public landing page
+    ├── Landing.css
+    ├── Signup.jsx                 # User registration
+    ├── Login.jsx                  # User login
+    ├── AuthPages.css              # Shared auth styling
+    ├── MotherDashboard.jsx        # Mother's main dashboard
+    ├── SymptomsPage.jsx           # Symptom logging form
+    ├── SymptomsPage.css
+    ├── RiskResult.jsx             # Risk assessment results
+    ├── RiskResultPage.css
+    ├── CHVDashboard.jsx           # CHV dashboard
+    └── DashboardPages.css         # Shared dashboard styling
 ```
 
-### 2. Configure Database
+## 🎨 Design System
 
-1. **Create Supabase project**:
-   - Go to [supabase.com](https://supabase.com)
-   - Create new project
-   - Note your URL and service role key
+The application uses an **Ocean Blue theme** with glassmorphism effects. All design tokens are defined in `/src/styles/globals.css`.
 
-2. **Set up database schema**:
-   - In Supabase dashboard, go to SQL Editor
-   - Create new query
-   - Copy entire contents of `backend/database/schema.sql`
-   - Execute query
-
-### 3. Configure Environment Variables
-
-**Backend** - Create `backend/.env`:
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
-JWT_SECRET=your-secret-key-minimum-32-characters-long
-PORT=5000
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:3000
+### Color Palette
+```css
+--primary: #0077B6        /* Ocean Blue */
+--primary-dark: #023E8A   /* Navy Blue */
+--primary-light: #00B4D8  /* Sky Blue */
+--danger: #E63946         /* Red for warnings */
+--success: #2DC653        /* Green for success */
+--warning: #F77F00        /* Orange for warnings */
+--dark: #051923           /* Near black */
+--light: #F0F9FF          /* Near white */
 ```
 
-**Frontend** - Create `guard/.env`:
-```env
-REACT_APP_API_BASE_URL=http://localhost:5000/api
-```
+### Typography
+- **Headings**: Playfair Display (serif)
+- **Body**: DM Sans (sans-serif)
+- **Data/Code**: JetBrains Mono (monospace)
 
-### 4. Run Development Servers
+## 🔐 Authentication Flow
 
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-```
-Server runs on `http://localhost:5000`
+1. **User accesses app** → Checks AuthContext for stored token
+2. **If no token** → Redirected to `/login`
+3. **User logs in** → Backend returns JWT token
+4. **Token stored** → In browser localStorage
+5. **Protected routes** → Wrapped in ProtectedRoute component
+6. **Each API call** → JWT automatically included in Authorization header
+7. **Token expires** → 401 response triggers logout and redirect to login
 
-**Terminal 2 - Frontend:**
-```bash
-cd guard
-npm start
-```
-App opens at `http://localhost:3000`
+## 📄 Pages
 
-### 5. Test the Application
+### Landing Page (`/`)
+Public homepage with features, testimonials, and CTAs.
 
-1. **Visit landing page**: `http://localhost:3000`
-2. **Create account**: Click "Get Started"
-3. **Choose role**: Select Mother or CHV
-4. **Fill form**: Complete role-specific fields
-5. **Login**: Use credentials to login
-6. **Explore**: Navigate dashboard
+### Signup (`/signup`)
+User registration with role selection (Mother or CHV) and conditional fields.
 
-## 🔑 Key Features
+### Login (`/login`)
+User authentication with email and password.
 
-### For Mothers
-- ✅ Sign up and create pregnancy profile
-- ✅ Log symptoms with severity ratings
-- ✅ Provide vital measurements (BP, glucose)
-- ✅ View risk assessment results
-- ✅ See recommendations based on risk
-- ✅ Track assessment history
-- ✅ Communicate with assigned CHV
+### Mother Dashboard (`/mother-dashboard`)
+Main dashboard for pregnant mothers showing risk status and statistics.
 
-### For CHVs
-- ✅ View assigned mothers dashboard
-- ✅ Receive high-risk alerts
-- ✅ Access mother profiles and history
-- ✅ Create facility referrals
-- ✅ Track referral status
-- ✅ Mark alerts as reviewed
-- ✅ Generate caseload reports
+### Symptoms Page (`/symptoms`)
+Symptom logging form with severity sliders and vital measurements.
 
-### Admin Features (Dashboard analytics)
-- ✅ View system-wide statistics
-- ✅ Monitor high-risk cases
-- ✅ Track referral outcomes
-- ✅ Generate reports by region
+### Risk Result Page (`/risk-result`)
+Risk assessment display with recommendations and historical data.
 
-## 📊 Risk Scoring Algorithm
+### CHV Dashboard (`/chv-dashboard`)
+Community Health Volunteer case management with alerts and mothers list.
 
-Risk is calculated based on:
+## 🎯 State Management
 
-**Symptom Weights:**
-- Bleeding: 25
-- Blurred Vision: 20
-- Chest Pain: 20
-- Reduced Fetal Movement: 18
-- Difficulty Breathing: 15
-- Abdominal Pain: 12
-- Severe Headache: 10
-- Headache: 8
-- High Fever: 8
-- Swollen Feet: 6
-- Nausea: 3
+Uses React Context API (AuthContext) for:
+- User authentication
+- JWT token management
+- Role-based access control
+- localStorage persistence
 
-**Health Modifiers:**
-- High BP (≥140/90): +15-25 points
-- Abnormal glucose (>120): +8-12 points
+## 🧩 Reusable Components
 
-**Risk Levels:**
-- **LOW** (<30): Continue routine monitoring
-- **MODERATE** (30-64): Increase check-in frequency
-- **HIGH** (≥65): Seek immediate medical attention
+### ProtectedRoute
+Wraps routes requiring authentication.
 
-Automatic alert created for assigned CHV when HIGH risk detected.
+### RiskGauge
+Displays risk score in circular gauge with color coding.
 
-## 🔐 Security
+### StatCard
+Dashboard stat card with optional loading skeleton.
 
-- **JWT Tokens**: 30-day expiration, signed with secret
-- **Password Hashing**: bcryptjs with 12 salt rounds
-- **Row Level Security**: Supabase RLS policies enforce data access
-- **HTTPS**: Required for production
-- **CORS**: Configured for frontend origin
-- **Input Validation**: Frontend and backend validation
-- **XSS Prevention**: React's built-in escaping
+### AlertRow
+High-risk alert row for CHV dashboard.
+
+## 🚀 Available Scripts
+
+### `npm start`
+Runs the app in development mode. Opens [http://localhost:3000](http://localhost:3000).
+
+### `npm test`
+Launches the test runner in interactive watch mode.
+
+### `npm run build`
+Builds the app for production to the `build` folder.
+
+### `npm run eject`
+Ejects from Create React App (one-way operation).
+
+## 🌐 API Integration
+
+All API calls use Axios with automatic JWT token injection. The API base URL is configured via `REACT_APP_API_BASE_URL` environment variable.
 
 ## 📱 Responsive Design
 
-Works seamlessly on:
-- **Mobile**: < 480px - Single column layout
-- **Tablet**: 480-768px - Medium layout
-- **Desktop**: > 768px - Full layout
-
-## 🧪 Testing
-
-### Backend
-```bash
-cd backend
-npm test
-```
-
-### Frontend
-```bash
-cd guard
-npm test
-```
-
-### Manual Testing
-Server health check:
-```bash
-curl http://localhost:5000/health
-```
+Fully responsive with breakpoints for mobile, tablet, and desktop. Sidebar collapses on smaller screens.
 
 ## 🚀 Deployment
 
-### Frontend - Netlify/Vercel
+### To Netlify
 ```bash
-cd guard
 npm run build
-# Deploy build/ folder
+netlify deploy --prod --dir=build
 ```
 
-### Backend - Railway/Render/AWS
-1. Push to GitHub
-2. Connect to deployment platform
-3. Set environment variables
-4. Deploy
+### To Vercel
+```bash
+npm install -g vercel
+vercel --prod
+```
 
-### Database - Supabase
-- Automatic backup and restore
-- Real-time replication
-- Automated scaling
+### To GitHub Pages
+```bash
+npm install --save-dev gh-pages
+npm run build
+npm run deploy
+```
 
-## 📞 API Endpoints Summary
+## 💡 Best Practices
 
-### Authentication
-- `POST /api/auth/register` - Create account
-- `POST /api/auth/login` - Login
-- `POST /api/auth/verify` - Verify token
-
-### Symptoms (Mother only)
-- `POST /api/symptoms/log` - Log symptoms
-- `GET /api/symptoms/history` - Get symptom history
-
-### Risk Assessment
-- `GET /api/risk/latest` - Latest assessment
-- `GET /api/risk/history` - Past assessments
-
-### Mother Profile
-- `GET /api/mother/dashboard` - Dashboard stats
-- `GET /api/mother/profile` - Profile data
-- `PUT /api/mother/profile` - Update profile
-
-### CHV Management (CHV only)
-- `GET /api/chv/dashboard` - CHV dashboard
-- `GET /api/chv/alerts` - High-risk alerts
-- `GET /api/chv/mothers` - Assigned mothers
-- `PUT /api/chv/alerts/:id/mark-reviewed` - Mark reviewed
-
-### Referrals (CHV only)
-- `POST /api/referrals/create` - Create referral
-- `GET /api/referrals/list` - Get referrals
-- `PUT /api/referrals/:id/status` - Update status
-
-See [Backend README](./backend/README.md) for detailed API documentation.
+1. Always run backend before frontend
+2. Check environment variables before deploying
+3. Test protected routes with different user roles
+4. Keep sensitive data out of component code
+5. Test on mobile devices before releasing
 
 ## 🐛 Troubleshooting
 
-### API Connection Issues
-- Verify backend is running: `curl http://localhost:5000/health`
-- Check `REACT_APP_API_BASE_URL` in frontend .env
-- Check CORS_ORIGIN in backend .env
+### API Calls Returning 401
+- Check token in localStorage
+- Verify `REACT_APP_API_BASE_URL` in .env
+- Ensure backend is running
 
-### Database Connection Issues
-- Verify Supabase URL and key in .env
-- Check internet connection
-- Verify Supabase project is active
-- Run schema.sql again if tables missing
-
-### Authentication Issues
-- Clear localStorage: `localStorage.clear()` in console
-- Check JWT_SECRET in backend .env
-- Verify token expiration not exceeded
-
-### Styling Issues
+### Styles Not Loading
 - Clear browser cache
-- Check globals.css is imported
-- Verify font URLs in CSS
+- Check imports in component files
+- Verify CSS file paths
 
-## 📚 Documentation
+### Components Not Rendering
+- Check browser console for errors
+- Verify all imports are correct
+- Check ProtectedRoute role requirements
 
-- [Frontend Guide](./guard/README.md) - React components and pages
-- [Backend Guide](./backend/README.md) - API routes and services
-- [Database Schema](./backend/database/schema.sql) - SQL structure
+## 📞 Support
 
-## 🤝 Contributing
+For issues:
+1. Check browser console for errors
+2. Verify backend is running: `http://localhost:5000/health`
+3. Check network tab in DevTools for failed requests
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/name`
-3. Commit changes: `git commit -m 'Add feature'`
-4. Push to branch: `git push origin feature/name`
-5. Open Pull Request
+## 📄 License
 
-## 📝 License
+Part of the BirthGuard maternal health monitoring system.
 
-BirthGuard is open source and available under the MIT License.
+### Analyzing the Bundle Size
 
-## 💡 Future Enhancements
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-- [ ] Mobile app (React Native)
-- [ ] SMS notifications for mothers without internet
-- [ ] Offline data sync
-- [ ] Predictive analytics with ML
-- [ ] Prescription management
-- [ ] Video consultations
-- [ ] Integration with government health systems
-- [ ] WhatsApp/Telegram bots
-- [ ] Health education content
-- [ ] Multi-language support
+### Making a Progressive Web App
 
-## 📞 Support & Feedback
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-For issues, suggestions, or questions:
-1. Check [Backend README](./backend/README.md) for API help
-2. Check [Frontend README](./guard/README.md) for UI help
-3. Review browser console and network tab for errors
-4. Check environment variables are set correctly
+### Advanced Configuration
 
-## 🙏 Acknowledgments
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-Built with ❤️ for maternal health in underserved communities.
+### Deployment
 
----
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-**Last Updated**: January 2025
-**Version**: 1.0.0
-**Status**: Production Ready
-# BirthGuard
+### `npm run build` fails to minify
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
