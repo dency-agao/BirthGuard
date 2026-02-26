@@ -1,0 +1,25 @@
+{
+  "name": "birthguard-backend",
+  "version": "1.0.0",
+  "description": "BirthGuard - Smart Maternal Risk Monitoring System Backend",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "keywords": ["maternal", "health", "risk", "monitoring"],
+  "author": "Codestars Group",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "axios": "^1.3.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "@supabase/supabase-js": "^2.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
