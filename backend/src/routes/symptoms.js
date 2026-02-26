@@ -13,56 +13,54 @@ router.post('/log', authMiddleware, roleMiddleware('mother'), async (req, res) =
     const riskResult = calculateRiskScore(symptoms, blood_pressure, glucose);
 
     // Save symptom log
-    const { data: symptomLog, error: logError } = await req.supabase
-      .from('symptom_logs')
-      .insert([
-        {
-          mother_id,
-          symptoms: JSON.stringify(symptoms),
-          blood_pressure: JSON.stringify(blood_pressure),
-          glucose,
-          general_feeling,
-          notes,
-          risk_score: riskResult.score,
-          risk_level: riskResult.level,
-        },
-      ])
-      .select()
-      .single();
+    const query = `
+      INSERT INTO symptom_logs (mother_id, symptoms, blood_pressure, glucose, general_feeling, notes, risk_score, risk_level)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-    if (logError) {
-      throw logError;
-    }
+    const [result] = await req.db.query(query, [
+      mother_id,
+      JSON.stringify(symptoms),
+      JSON.stringify(blood_pressure),
+      glucose,
+      general_feeling,
+      notes,
+      riskResult.score,
+      riskResult.level,
+    ]);
 
     // If risk is HIGH, create alerts for assigned CHVs
     if (riskResult.level === 'HIGH') {
       // Get assigned CHV
-      const { data: motherProfile } = await req.supabase
-        .from('mother_profiles')
-        .select('assigned_chv_id')
-        .eq('user_id', mother_id)
-        .single();
+      const [motherProfile] = await req.db.query(
+        `SELECT assigned_chv_id FROM mother_profiles WHERE user_id = ?`,
+        [mother_id]
+      );
 
-      if (motherProfile?.assigned_chv_id) {
+      if (motherProfile && motherProfile[0]?.assigned_chv_id) {
+        const chv_id = motherProfile[0].assigned_chv_id;
+
         // Get mother name
-        const { data: user } = await req.supabase
-          .from('users')
-          .select('full_name')
-          .eq('id', mother_id)
-          .single();
+        const [user] = await req.db.query(
+          `SELECT first_name, last_name FROM users WHERE id = ?`,
+          [mother_id]
+        );
+
+        const fullName = user[0] ? `${user[0].first_name} ${user[0].last_name}` : 'Unknown';
 
         // Create alert
-        await req.supabase
-          .from('alerts')
-          .insert([
-            {
-              mother_id,
-              chv_id: motherProfile.assigned_chv_id,
-              risk_level: riskResult.level,
-              message: `${user?.full_name} has reported high-risk symptoms (Score: ${riskResult.score}/100)`,
-              is_read: false,
-            },
-          ]);
+        const alertQuery = `
+          INSERT INTO alerts (mother_id, chv_id, risk_level, message, is_read)
+          VALUES (?, ?, ?, ?, ?)
+        `;
+
+        await req.db.query(alertQuery, [
+          mother_id,
+          chv_id,
+          riskResult.level,
+          `${fullName} has reported high-risk symptoms (Score: ${riskResult.score}/100)`,
+          false,
+        ]);
       }
     }
 
@@ -71,7 +69,7 @@ router.post('/log', authMiddleware, roleMiddleware('mother'), async (req, res) =
       message: 'Symptoms logged successfully',
       risk_score: riskResult.score,
       risk_level: riskResult.level,
-      symptom_log_id: symptomLog.id,
+      symptom_log_id: result.insertId,
     });
   } catch (error) {
     console.error('Error logging symptoms:', error);
@@ -89,16 +87,14 @@ router.get('/history', authMiddleware, roleMiddleware('mother'), async (req, res
     const mother_id = req.user.id;
     const limit = req.query.limit || 10;
 
-    const { data: symptoms, error } = await req.supabase
-      .from('symptom_logs')
-      .select('*')
-      .eq('mother_id', mother_id)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const query = `
+      SELECT * FROM symptom_logs
+      WHERE mother_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `;
 
-    if (error) {
-      throw error;
-    }
+    const [symptoms] = await req.db.query(query, [mother_id, parseInt(limit)]);
 
     res.json({
       success: true,

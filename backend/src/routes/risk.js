@@ -14,20 +14,23 @@ router.get('/latest', authMiddleware, async (req, res) => {
       mother_id = req.query.mother_id;
     }
 
-    const { data: latestLog, error } = await req.supabase
-      .from('symptom_logs')
-      .select('*')
-      .eq('mother_id', mother_id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    const query = `
+      SELECT * FROM symptom_logs
+      WHERE mother_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
 
-    if (error || !latestLog) {
+    const [logs] = await req.db.query(query, [mother_id]);
+
+    if (!logs || logs.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'No risk assessment found',
       });
     }
+
+    const latestLog = logs[0];
 
     res.json({
       success: true,
@@ -63,16 +66,14 @@ router.get('/history', authMiddleware, async (req, res) => {
       mother_id = req.query.mother_id;
     }
 
-    const { data: history, error } = await req.supabase
-      .from('symptom_logs')
-      .select('id, risk_score, risk_level, created_at')
-      .eq('mother_id', mother_id)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const query = `
+      SELECT id, risk_score, risk_level, created_at FROM symptom_logs
+      WHERE mother_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `;
 
-    if (error) {
-      throw error;
-    }
+    const [history] = await req.db.query(query, [mother_id, parseInt(limit)]);
 
     res.json({
       success: true,

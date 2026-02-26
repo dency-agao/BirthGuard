@@ -8,42 +8,34 @@ router.get('/dashboard', authMiddleware, roleMiddleware('mother'), async (req, r
     const mother_id = req.user.id;
 
     // Get user data
-    const { data: user } = await req.supabase
-      .from('users')
-      .select('*')
-      .eq('id', mother_id)
-      .single();
+    const [users] = await req.db.query(
+      `SELECT * FROM users WHERE id = ?`,
+      [mother_id]
+    );
+    const user = users[0];
 
     // Get mother profile
-    const { data: profile } = await req.supabase
-      .from('mother_profiles')
-      .select('*')
-      .eq('user_id', mother_id)
-      .single();
+    const [profiles] = await req.db.query(
+      `SELECT * FROM mother_profiles WHERE user_id = ?`,
+      [mother_id]
+    );
+    const profile = profiles[0];
 
     // Get latest symptom log
-    const { data: latestLog } = await req.supabase
-      .from('symptom_logs')
-      .select('*')
-      .eq('mother_id', mother_id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    const [latestLogs] = await req.db.query(
+      `SELECT * FROM symptom_logs WHERE mother_id = ? ORDER BY created_at DESC LIMIT 1`,
+      [mother_id]
+    );
+    const latestLog = latestLogs[0];
 
     // Count symptoms this week
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const { data: thisWeekSymptoms, error: countError } = await req.supabase
-      .from('symptom_logs')
-      .select('id')
-      .eq('mother_id', mother_id)
-      .gte('created_at', oneWeekAgo.toISOString())
-      .lte('created_at', new Date().toISOString());
-
-    if (countError) {
-      console.error('Error counting symptoms:', countError);
-    }
+    const [thisWeekSymptoms] = await req.db.query(
+      `SELECT id FROM symptom_logs WHERE mother_id = ? AND created_at >= ? AND created_at <= ?`,
+      [mother_id, oneWeekAgo.toISOString(), new Date().toISOString()]
+    );
 
     // Calculate weeks pregnant
     let weeksPregnant = 0;
@@ -64,7 +56,8 @@ router.get('/dashboard', authMiddleware, roleMiddleware('mother'), async (req, r
       symptoms_this_week: thisWeekSymptoms?.length || 0,
       user_info: {
         id: user.id,
-        full_name: user.full_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
       },
     });
@@ -83,19 +76,21 @@ router.get('/profile', authMiddleware, roleMiddleware('mother'), async (req, res
   try {
     const mother_id = req.user.id;
 
-    const { data: profile, error } = await req.supabase
-      .from('mother_profiles')
-      .select('*')
-      .eq('user_id', mother_id)
-      .single();
+    const [profiles] = await req.db.query(
+      `SELECT * FROM mother_profiles WHERE user_id = ?`,
+      [mother_id]
+    );
 
-    if (error) {
-      throw error;
+    if (!profiles || profiles.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found',
+      });
     }
 
     res.json({
       success: true,
-      profile,
+      profile: profiles[0],
     });
   } catch (error) {
     console.error('Error fetching mother profile:', error);
@@ -113,25 +108,29 @@ router.put('/profile', authMiddleware, roleMiddleware('mother'), async (req, res
     const mother_id = req.user.id;
     const { edd, county, gravida } = req.body;
 
-    const { data: updatedProfile, error } = await req.supabase
-      .from('mother_profiles')
-      .update({
-        edd: edd || undefined,
-        county: county || undefined,
-        gravida: gravida || undefined,
-      })
-      .eq('user_id', mother_id)
-      .select()
-      .single();
+    const query = `
+      UPDATE mother_profiles
+      SET edd = ?, county = ?, gravida = ?
+      WHERE user_id = ?
+    `;
 
-    if (error) {
-      throw error;
-    }
+    await req.db.query(query, [
+      edd || null,
+      county || null,
+      gravida || null,
+      mother_id,
+    ]);
+
+    // Fetch updated profile
+    const [profiles] = await req.db.query(
+      `SELECT * FROM mother_profiles WHERE user_id = ?`,
+      [mother_id]
+    );
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      profile: updatedProfile,
+      profile: profiles[0],
     });
   } catch (error) {
     console.error('Error updating mother profile:', error);

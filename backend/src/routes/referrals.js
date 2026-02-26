@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware');
+const { v4: uuidv4 } = require('uuid');
 
 // Create a referral
 router.post('/create', authMiddleware, roleMiddleware('chv'), async (req, res) => {
@@ -17,28 +18,24 @@ router.post('/create', authMiddleware, roleMiddleware('chv'), async (req, res) =
     }
 
     // Create referral record
-    const { data: referral, error } = await req.supabase
-      .from('referrals')
-      .insert({
-        mother_id,
-        chv_id,
-        facility,
-        urgency: urgency || 'normal',
-        notes: notes || '',
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    const query = `
+      INSERT INTO referrals (mother_id, chv_id, facility, urgency, notes, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
 
-    if (error) {
-      throw error;
-    }
+    const [result] = await req.db.query(query, [
+      mother_id,
+      chv_id,
+      facility,
+      urgency || 'normal',
+      notes || '',
+      'pending',
+    ]);
 
     res.status(201).json({
       success: true,
       message: 'Referral created successfully',
-      referral,
+      referral_id: result.insertId,
     });
   } catch (error) {
     console.error('Error creating referral:', error);
@@ -56,39 +53,30 @@ router.get('/list', authMiddleware, roleMiddleware('chv'), async (req, res) => {
     const chv_id = req.user.id;
     const { status } = req.query; // Optional filter by status
 
-    let query = req.supabase
-      .from('referrals')
-      .select(
-        `
-        id,
-        mother_id,
-        facility,
-        urgency,
-        notes,
-        status,
-        created_at,
-        users:mother_id(full_name, phone, email)
-      `
-      )
-      .eq('chv_id', chv_id)
-      .order('created_at', { ascending: false });
+    let query = `
+      SELECT r.id, r.mother_id, r.facility, r.urgency, r.notes, r.status, r.created_at,
+             u.first_name, u.last_name, u.phone, u.email
+      FROM referrals r
+      JOIN users u ON r.mother_id = u.id
+      WHERE r.chv_id = ?
+    `;
+    const params = [chv_id];
 
     if (status) {
-      query = query.eq('status', status);
+      query += ` AND r.status = ?`;
+      params.push(status);
     }
 
-    const { data: referrals, error } = await query;
+    query += ` ORDER BY r.created_at DESC`;
 
-    if (error) {
-      throw error;
-    }
+    const [referrals] = await req.db.query(query, params);
 
     const formattedReferrals = referrals?.map((ref) => ({
       id: ref.id,
       mother_id: ref.mother_id,
-      mother_name: ref.users?.full_name || 'Unknown',
-      phone: ref.users?.phone,
-      email: ref.users?.email,
+      mother_name: `${ref.first_name} ${ref.last_name}` || 'Unknown',
+      phone: ref.phone,
+      email: ref.email,
       facility: ref.facility,
       urgency: ref.urgency,
       notes: ref.notes,
@@ -132,18 +120,17 @@ router.put('/:referralId/status', authMiddleware, roleMiddleware('chv'), async (
       });
     }
 
-    const { data: updated, error } = await req.supabase
-      .from('referrals')
-      .update({ status })
-      .eq('id', referralId)
-      .select()
-      .single();
+    await req.db.query(
+      `UPDATE referrals SET status = ? WHERE id = ?`,
+      [status, referralId]
+    );
 
-    if (error) {
-      throw error;
-    }
+    const [updated] = await req.db.query(
+      `SELECT * FROM referrals WHERE id = ?`,
+      [referralId]
+    );
 
-    if (!updated) {
+    if (!updated || updated.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Referral not found',
@@ -153,7 +140,7 @@ router.put('/:referralId/status', authMiddleware, roleMiddleware('chv'), async (
     res.json({
       success: true,
       message: 'Referral status updated successfully',
-      referral: updated,
+      referral: updated[0],
     });
   } catch (error) {
     console.error('Error updating referral:', error);
